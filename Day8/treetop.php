@@ -13,8 +13,9 @@ for($i = 0; $i < count($items); $i++) {
 
 $edgeTrees = (count($grid[0]) * 2) + ((count($grid) - 2) * 2);
 $treesToCheck = $grid;
+$visGrid = $grid;
 
-function isVisible(array $trees, int $row, int $column): bool
+function isVisible(array $trees, int $row, int $column, array &$visGrid): bool
 {
     $totalColumns = count($trees[0]);
     $totalRows = count($trees);
@@ -25,21 +26,67 @@ function isVisible(array $trees, int $row, int $column): bool
     $columnsToCheckRange = range(0, $totalColumns - 1);
     unset($columnsToCheckRange[$column]);
 
-    foreach ($rowsToCheckRange as $rowCheck) {
-        if($trees[$rowCheck][$column] > $height) {
-            return true;
+    $rowsAbove = range(0, $row - 1);
+    $rowsBelow = range($row + 1, $totalRows - 1);
+
+    $colsLeft = range(0, $column - 1);
+    $colsRight = range($column + 1, $totalColumns - 1);
+
+    $canBeSeenAbove = true;
+    $canBeSeenBelow = true;
+    $canBeSeenLeft = true;
+    $canBeSeenRight = true;
+    $left = 1;
+    $right = 2;
+    $top = 4;
+    $below = 8;
+    $visGrid[$row][$column] = 0;
+
+    foreach ($rowsAbove as $rowCheck) {
+        if($height <= $trees[$rowCheck][$column]) {
+            $canBeSeenAbove = false;
         }
 
-        if($rowCheck === $row) {
-            foreach ($columnsToCheckRange as $columnCheck) {
-                if($trees[$row][$columnCheck] > $height) {
-                    return true;
-                }
-            }
+    }
+
+    if($canBeSeenAbove) {
+        $visGrid[$row][$column] |= $top;
+    }
+
+    foreach ($rowsBelow as $rowCheck) {
+        if($height <= $trees[$rowCheck][$column]) {
+
+            $canBeSeenBelow = false;
         }
     }
 
-    return false;
+    if($canBeSeenBelow) {
+        $visGrid[$row][$column] |= $below;
+    }
+
+    foreach ($colsLeft as $columnCheck) {
+        if($height <= $trees[$row][$columnCheck]) {
+            $canBeSeenLeft = false;
+        }
+    }
+
+    if($canBeSeenLeft) {
+        $visGrid[$row][$column] |= $left;
+    }
+
+    foreach ($colsRight as $columnCheck) {
+        if($height <= $trees[$row][$columnCheck]) {
+            $canBeSeenRight = false;
+        }
+
+    }
+    if($canBeSeenRight) {
+        $visGrid[$row][$column] |= $right;
+    }
+
+
+
+    return ($canBeSeenAbove || $canBeSeenBelow) || ($canBeSeenLeft || $canBeSeenRight);
 }
 
 //remove first and last
@@ -51,10 +98,13 @@ for($i = 0; $i < count($treesToCheck); $i++) {
     array_shift($treesToCheck[$i]);
 
     for($j = 0; $j < count($treesToCheck[$i]); $j++) {
-        if(isVisible($grid, $i + 1, $j + 1) ) {
+        if(isVisible($grid, $i + 1, $j + 1, $visGrid)) {
             ++$visibleTrees;
         }
     }
 }
 
+print_r($visGrid);
+
 echo "Part 1 : ".  $visibleTrees + $edgeTrees . PHP_EOL;
+//echo "Part 1 : ".  $visibleTrees . PHP_EOL;
