@@ -63,6 +63,27 @@ class Node {
         }
         return $runningTotal;
     }
+
+    public function getDirectoriesOver(int $lowerLimit): array
+    {
+        $dirs = [];
+        foreach($this->children as $node) {
+            $size = $node->calculateSize();
+
+            if($node->isDir()) {
+                if ($size >= $lowerLimit) {
+                    $dirs[] = $size;
+                }
+                $subDirs = $node->getDirectoriesOver($lowerLimit);
+                foreach ($subDirs as $dir) {
+                    $dirs[] = $dir;
+                }
+            }
+        }
+
+        return $dirs;
+    }
+
     public function totalSizeOfDirectoriesUnder(int $upperLimit): int
     {
         $total = 0;
@@ -85,19 +106,40 @@ class Tree {
     {
     }
 
-    public function calculateSizeOfDir(string $dirPath): int
+    public function calculateSize(): int
     {
         $runningTotal = 0;
-        $directoryArray = explode("/", $dirPath);
 
         foreach($this->root->children as $node) {
-            if ($node->isDir() && $node->name === $directoryArray[0]) {
+            if ($node->isDir()) {
                 $runningTotal += $node->calculateSize();
-                break;
+            } else {
+                $runningTotal += $node->size;
             }
         }
 
         return $runningTotal;
+    }
+
+    public function getDirectoriesOver(int $lowerLimit): array
+    {
+        $dirs = [];
+        foreach($this->root->children as $node) {
+            $size = $node->calculateSize();
+
+            if($node->isDir()) {
+                if($size >= $lowerLimit) {
+                    $dirs[] = $node;
+                }
+
+                $subDirs = $node->getDirectoriesOver($lowerLimit);
+                foreach ($subDirs as $dir) {
+                    $dirs[] = $dir;
+                }
+            }
+        }
+
+        return $dirs;
     }
 
     public function totalSizeOfDirectoriesUnder(int $upperLimit): int
@@ -120,21 +162,6 @@ class Tree {
 }
 
 $tree = new Tree(new Node([], "/"));
-//
-//$tree->root->addDir("a");
-//$tree->root->children[0]->addFile("b.txt", 14848514);
-//$tree->root->children[0]->addFile("c.dat", 8504156);
-//$tree->root->addDir("b");
-//$tree->root->children[1]->addFile("b.dicks", 250);
-//$tree->root->children[1]->addDir("d");
-//$tree->root->children[1]->children[1]->addFile("chris.txt", 250);
-//$tree->root->addDir("c");
-//$tree->root->children[2]->addFile("chris.txt", 200);
-//
-//
-//print $tree->totalSizeOfDirectoriesUnder(250) . PHP_EOL;
-
-
 $cwd = [];
 $currentNode = $tree->root;
 
@@ -186,4 +213,24 @@ foreach ($items as $item) {
     }
 }
 
-print $tree->totalSizeOfDirectoriesUnder(100_000) . PHP_EOL;
+print "Part 1: " . $tree->totalSizeOfDirectoriesUnder(100_000) . PHP_EOL;
+
+$totalSpace = 70_000_000;
+$spaceNeeded = 30_000_000;
+$sizeOfTree = $tree->calculateSize();
+$unusedSpace = $totalSpace - $sizeOfTree;
+$spaceToClear = $spaceNeeded - $unusedSpace;
+
+// This doesn't include the base directory but you should never sudo rm -rf --no-preserve-root
+$dirsToDelete = $tree->getDirectoriesOver($spaceToClear);
+
+
+$dirsToDelete = array_map(function($nodes) {
+    // Fuck Knows?!?
+    if(is_int($nodes)) {
+        return $nodes;
+    }
+    return $nodes->calculateSize();
+}, $dirsToDelete);
+
+print "Part 2: " . min($dirsToDelete) .PHP_EOL;
