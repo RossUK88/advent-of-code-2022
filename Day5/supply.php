@@ -1,12 +1,12 @@
 <?php
-$testing = true;
+$testing = false;
 $totalStacks = $testing ? 3 : 9;
 $stacks = [];
 $items = array_filter(explode(PHP_EOL, file_get_contents($testing ? './test_input.txt' : './input.txt')), fn($item) => $item !== '');
 $procedure = array_filter(explode(PHP_EOL, file_get_contents($testing ? './test_procedure.txt' : './procedure.txt')), fn($item) => $item !== '');
 
 
-for($i = 1; $i <= $totalStacks; $i++) {
+for ($i = 1; $i <= $totalStacks; $i++) {
     $stacks[] = [];
 }
 //1 1
@@ -17,20 +17,22 @@ for($i = 1; $i <= $totalStacks; $i++) {
 //
 // 1 = 0
 // ((i - 1) + 4) + 1
-foreach($items as $item) {
+foreach ($items as $item) {
 
-    for($i = 1; $i <= $totalStacks; $i++) {
-        if($i === 1) {
+    for ($i = 1; $i <= $totalStacks; $i++) {
+        if ($i === 1) {
             $offset = 1;
         } else {
             $offset = (($i - 1) * 4) + 1;
         }
 
-        if(isset($item[$offset]) && $item[$offset] !== ' ') {
+        if (isset($item[$offset]) && $item[$offset] !== ' ') {
             $stacks[$i - 1][] = $item[$offset];
         }
     }
 }
+
+$stackPartTwo = $stacks;
 
 foreach ($procedure as $movement) {
     preg_match_all("/\d+/", $movement, $matches);
@@ -42,5 +44,18 @@ foreach ($procedure as $movement) {
     }
 }
 
-print "Part 1: " . implode("", array_map(fn($stack) => $stack[0], $stacks)) .PHP_EOL;
+print "Part 1: ".implode("", array_map(fn($stack) => $stack[0], $stacks)).PHP_EOL;
 
+foreach ($procedure as $movement) {
+    preg_match_all("/\d+/", $movement, $matches);
+    [$amount, $from, $to] = $matches[0];
+
+    $itemsToMove = array_slice($stackPartTwo[$from - 1], 0, $amount);
+    $stackPartTwo[$from - 1] = array_slice($stackPartTwo[$from - 1], $amount, count($stackPartTwo[$from - 1]) - $amount);
+
+    foreach (array_reverse($itemsToMove) as $item) {
+        array_unshift($stackPartTwo[$to - 1], $item);
+    }
+}
+
+print "Part 2: ".implode("", array_map(fn($stack) => $stack[0], $stackPartTwo)).PHP_EOL;
