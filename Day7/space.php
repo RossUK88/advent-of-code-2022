@@ -1,5 +1,5 @@
 <?php
-$testing = true;
+$testing = false;
 $items = array_filter(explode(PHP_EOL, file_get_contents($testing ? './test_input.txt' : './input.txt')), fn($item) => $item !== '');
 
 class Node {
@@ -52,7 +52,6 @@ class Node {
 
     public function calculateSize(): int
     {
-        print_r($this->children);
         $runningTotal = 0;
         foreach($this->children as $child) {
             if($child->isFile()) {
@@ -68,14 +67,16 @@ class Node {
     {
         $total = 0;
         foreach($this->children as $node) {
-            if($node->isDir() && ($size = $node->calculateSize()) <= $upperLimit) {
-                $total += $size;
-            } else if ($node->isDir()) {
+            $size = $node->calculateSize();
+
+            if($node->isDir()) {
+                if ($size <= $upperLimit) {
+                    $total += $size;
+                }
                 $total += $node->totalSizeOfDirectoriesUnder($upperLimit);
             }
         }
 
-        return $total;
         return $total;
     }
 }
@@ -103,9 +104,12 @@ class Tree {
     {
         $total = 0;
         foreach($this->root->children as $node) {
-            if($node->isDir() && ($size = $node->calculateSize()) <= $upperLimit) {
-                $total += $size;
-            } else if ($node->isDir()) {
+            $size = $node->calculateSize();
+
+            if($node->isDir()) {
+                if($size <= $upperLimit) {
+                    $total += $size;
+                }
                 $total += $node->totalSizeOfDirectoriesUnder($upperLimit);
             }
         }
@@ -137,7 +141,6 @@ $currentNode = $tree->root;
 foreach ($items as $item) {
     if(str_starts_with($item, "$ ")) {
         $command = substr($item, 2);
-        echo $command.PHP_EOL;
 
         if(str_starts_with($command, "cd ")) {
             $directory = substr($command, 3);
@@ -181,8 +184,6 @@ foreach ($items as $item) {
         $file = explode(" ", $item);
         $currentNode->addFile($file[1], $file[0]);
     }
-
-//    echo implode("/", $cwd).PHP_EOL;
 }
 
 print $tree->totalSizeOfDirectoriesUnder(100_000) . PHP_EOL;
