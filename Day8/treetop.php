@@ -14,6 +14,7 @@ for($i = 0; $i < count($items); $i++) {
 $edgeTrees = (count($grid[0]) * 2) + ((count($grid) - 2) * 2);
 $treesToCheck = $grid;
 $visGrid = $grid;
+$scenicGrid = $grid;
 
 function isVisible(array $trees, int $row, int $column, array &$visGrid): bool
 {
@@ -89,22 +90,94 @@ function isVisible(array $trees, int $row, int $column, array &$visGrid): bool
     return ($canBeSeenAbove || $canBeSeenBelow) || ($canBeSeenLeft || $canBeSeenRight);
 }
 
+function getScenicScore(array $trees, int $row, int $column, array &$scenicGrid): void
+{
+    $totalColumns = count($trees[0]);
+    $totalRows = count($trees);
+    // Above
+    $above = range($row - 1, 0);
+    $left = range($column - 1, 0);
+    $below = range($row + 1, $totalRows - 1);
+    $right = range($column + 1, $totalColumns - 1);
+
+    $heightOfTree = $trees[$row][$column];
+    $scenicGrid[$row][$column] =[
+        'total' => 0,
+        'left' => 0,
+        'right' => 0,
+        'top' => 0,
+        'bottom' => 0,
+    ];
+
+    for($i = max($above); $i >= min($above); $i--) {
+        $scenicGrid[$row][$column]['top'] += 1;
+        if($heightOfTree <= $trees[$i][$column]) {
+            break;
+        }
+    }
+
+    for($i = min($below); $i <= max($below); $i++) {
+        $scenicGrid[$row][$column]['bottom'] += 1;
+        if($heightOfTree <= $trees[$i][$column]) {
+            break;
+        }
+    }
+
+//    if($column === 2) {
+//        print_r($left);
+//        die;
+//    }
+    for($i = max($left); $i >= min($left); $i--) {
+        $scenicGrid[$row][$column]['left'] += 1;
+        if($heightOfTree <= $trees[$row][$i]) {
+            break;
+        }
+    }
+
+    for($i = min($right); $i <= max($right); $i++) {
+        $scenicGrid[$row][$column]['right'] += 1;
+        if($heightOfTree <= $trees[$row][$i]) {
+            break;
+        }
+    }
+
+    $scenicGrid[$row][$column]['total'] =
+        $scenicGrid[$row][$column]['top'] * $scenicGrid[$row][$column]['bottom'] *
+        $scenicGrid[$row][$column]['left'] * $scenicGrid[$row][$column]['right'];
+
+}
+
 //remove first and last
 array_pop($treesToCheck);
 array_shift($treesToCheck);
+array_pop($scenicGrid);
+array_shift($scenicGrid);
+
 $visibleTrees = 0;
 for($i = 0; $i < count($treesToCheck); $i++) {
     array_pop($treesToCheck[$i]);
     array_shift($treesToCheck[$i]);
+    array_pop($scenicGrid[$i]);
+    array_shift($scenicGrid[$i]);
 
     for($j = 0; $j < count($treesToCheck[$i]); $j++) {
         if(isVisible($grid, $i + 1, $j + 1, $visGrid)) {
             ++$visibleTrees;
         }
+
+        getScenicScore($grid, $i + 1, $j + 1, $scenicGrid);
+
     }
 }
 
-print_r($visGrid);
+array_shift($scenicGrid);
+
 
 echo "Part 1 : ".  $visibleTrees + $edgeTrees . PHP_EOL;
-//echo "Part 1 : ".  $visibleTrees . PHP_EOL;
+
+$bestScenicScore = max(array_map(function($row) {
+    $row = array_map(fn($row) => $row['total'], $row);
+    return max($row);
+}, $scenicGrid));
+echo "Part 2 : ".  $bestScenicScore . PHP_EOL;
+
