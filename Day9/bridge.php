@@ -9,76 +9,81 @@ class Point {
     public function __construct(public int $x = 0, public int $y = 0) {
         $this->visited[] = sprintf("%d-%d", $this->x, $this->y);
     }
+}
 
-    public function countVisited(): int
-    {
-        return count(array_unique($this->visited));
+class Rope {
+    public array $knots;
+
+    public function __construct(public int $amountOfKnots = 9) {
+        for($i = 1; $i <= $amountOfKnots; $i++) {
+            $this->knots[] = new Point(0,0);
+        }
     }
-
-    private function isNeighbour(Point $point): bool
+    private function sign($x)
     {
-        return ($point->x - 1 === $this->x || $point->x + 1 === $this->x || $point->x === $this->x)
-            && ($point->y - 1 === $this->y || $point->y + 1 === $this->y || $point->y === $this->y);
-    }
-
-    public function move(string $direction, int $amount, Point $tail): self {
-        for($i = 1; $i <= $amount; $i++) {
-            switch($direction) {
-                case 'R':
-                    $this->horizontal(1);
-                    if(!$this->isNeighbour($tail)) {
-                        $tail->y = $this->y;
-                        $tail->horizontal(1);
-                    }
-                    break;
-                case 'L':
-                    $this->horizontal(-1);
-                    if(!$this->isNeighbour($tail)) {
-                        $tail->y = $this->y;
-                        $tail->horizontal(-1);
-                    }
-                    break;
-                case 'U':
-                    $this->vertical(1);
-                    if(!$this->isNeighbour($tail)) {
-                        $tail->x = $this->x;
-                        $tail->vertical(1);
-                    }
-                    break;
-                case 'D':
-                    $this->vertical(-1);
-                    if(!$this->isNeighbour($tail)) {
-                        $tail->x = $this->x;
-                        $tail->vertical(-1);
-                    }
-                    break;
-            }
-
-            $this->visited[] = sprintf("%d-%d", $this->x, $this->y);
-            $tail->visited[] = sprintf("%d-%d", $tail->x, $tail->y);
+        if($x === 0) {
+            return 0;
+        }
+        if($x < 0) {
+            return -1;
         }
 
-        return $this;
+        return 1;
     }
-    public function horizontal(int $amount): void
+    private function trailing(Point $head, Point $tail): bool
     {
-        $this->x += $amount;
+        $dx = $head->x - $tail->x;
+        $dy = $head->y - $tail->y;
+
+        if(abs($dx) <= 1 && abs($dy) <= 1) {
+            return false;
+        }
+
+        $tail->x += $this->sign($dx);
+        $tail->y += $this->sign($dy);
+        $tail->visited[] = sprintf("%d-%d", $tail->x, $tail->y);
+        return true;
     }
-    public function vertical(int $amount): void
+    public function move(string $direction, int $amount): void
     {
-        $this->y += $amount;
+        $dir = [
+            "R" => [1, 0],
+            "U" => [0, 1],
+            "L" => [-1, 0],
+            "D" => [0, -1],
+        ];
+        foreach(range(1, $amount) as $m) {
+            [$x, $y] = $dir[$direction];
+            $this->knots[0]->x += $x;
+            $this->knots[0]->y += $y;
+
+            for($i = 0; $i < $this->amountOfKnots - 1; $i++) {
+                if(!$this->trailing($this->knots[$i], $this->knots[$i + 1])) {
+                    break;
+                }
+
+                $this->knots[$i]->visited[] = sprintf("%d-%d", $this->knots[$i]->x, $this->knots[$i]->y);
+            }
+
+
+        }
     }
 }
 
-$head = new Point(0, 0);
-$tail = new Point(0, 0);
 
+$part1 = new Rope(2);
 for ($i = 0; $i < count($items); $i++) {
     $actions = explode(" ", $items[$i]);
 
-    $head->move($actions[0], $actions[1], $tail);
+    $part1->move($actions[0], $actions[1]);
 }
 
-print_r(array_values(array_unique($tail->visited)));
+$part2 = new Rope(10);
+for ($i = 0; $i < count($items); $i++) {
+    $actions = explode(" ", $items[$i]);
 
-echo "Part 1: " . $tail->countVisited() . PHP_EOL;
+    $part2->move($actions[0], $actions[1]);
+}
+
+echo "Part 1: " .  count(array_unique($part1->knots[count($part1->knots) - 1]->visited)) .PHP_EOL;
+echo "Part 2: " .  count(array_unique($part2->knots[count($part2->knots) - 1]->visited)) .PHP_EOL;
