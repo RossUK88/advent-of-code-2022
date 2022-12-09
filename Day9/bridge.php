@@ -7,7 +7,7 @@ class Point {
     public array $visited = [];
 
     public function __construct(public int $x = 0, public int $y = 0) {
-        $this->visited[] = sprintf("%d%d", $this->x, $this->y);
+        $this->visited[] = sprintf("%d-%d", $this->x, $this->y);
     }
 
     public function countVisited(): int
@@ -54,8 +54,8 @@ class Point {
                     break;
             }
 
-            $this->visited[] = sprintf("%d%d", $this->x, $this->y);
-            $tail->visited[] = sprintf("%d%d", $tail->x, $tail->y);
+            $this->visited[] = sprintf("%d-%d", $this->x, $this->y);
+            $tail->visited[] = sprintf("%d-%d", $tail->x, $tail->y);
         }
 
         return $this;
